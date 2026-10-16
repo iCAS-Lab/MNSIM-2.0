@@ -1,0 +1,96 @@
+Hardware description file location: /home/user/MNSIM-2.0/SimConfig.ini
+Software model file location: None
+Whether perform hardware simulation: True
+Whether perform accuracy simulation: False
+Whether consider SAFs: False
+Whether consider variations: False
+Quantization range: dynamic range (depends on the data distribution)
+run on device cpu
+weight bit 2
+Total crossbar number: 1
+========================Latency Results=================================
+ 
+Layer 0  type: conv
+Occupancy: 1.0
+total latency: 520775.69120256
+layer latency: 479815.6912025473
+Buffer latency of layer 0 : 163840 ( 31.46 %)
+     read buffer latency of layer 0 : 81920 ( 15.73 %)
+     write buffer latency of layer 0 : 81920 ( 15.73 %)
+Computing latency of layer 0 : 231997.65037056 ( 44.55 %)
+     DAC latency of layer 0 : 49152.0 ( 9.44 %)
+     ADC latency of layer 0 : 131072.0 ( 25.17 %)
+     xbar latency of layer 0 : 51773.650370560004 ( 9.94 %)
+Digital part latency of layer 0 : 83954.040832 ( 16.12 %)
+     iReg latency of layer 0 : 36864.0 ( 7.08 %)
+     oReg latency of layer 0 : 4096.0 ( 0.79 %)
+     input demux latency of layer 0 : 9153.08544 ( 1.76 %)
+     output mux latency of layer 0 : 1072.955392 ( 0.21 %)
+     shiftreg latency of layer 0 : 32768.0 ( 6.29 %)
+     adder latency of layer 0 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 0 : 0.0 ( 0.00 %)
+Pooling module latency of layer 0 : 0 ( 0.00 %)
+Intra tile communication latency of layer 0 : 24.0 ( 0.00 %)
+Inter tile communication latency of layer 0 : 40960.0 ( 7.87 %)
+     One layer merge latency of layer 0 : 40960.0 ( 7.87 %)
+     Inter tile transfer latency of layer 0 : 0.0 ( 0.00 %)
+----------------------------------------------
+Entire latency: 479815.6912025473 ns
+========================Area Results=================================
+Hardware area: 4317798.1165929 um^2
+		crossbar area: 3110174.7199999997 um^2
+		DAC area: 84.992 um^2
+		ADC area: 844800.0 um^2
+		Buffer area: 202901.5 um^2
+		Pooling area: 91917.1562 um^2
+		Other digital part area: 67919.74839289942 um^2
+			|---adder area: 0.0 um^2
+			|---output-shift-reg area: 727.04 um^2
+			|---input-reg area: 349.8371786982248 um^2
+			|---output-reg area: 349.8371786982248 um^2
+			|---input_demux area: 692.224 um^2
+			|---output_mux area: 692.224 um^2
+			|---joint_module area: 65108.58603550295 um^2
+Layer 0 :
+     Hardware area: 4317798.1165929 um^2
+========================Power Results=================================
+Hardware power: 0.007361229900051775 W
+		crossbar power: 3.787875e-08 W
+		DAC power: 3.9e-06 W
+		ADC power: 0.00126 W
+		Buffer power: 0.006096272 W
+			|---read buffer power: 0.002769806 W
+			|---write buffer power: 0.003326466 W
+		Pooling power: 0 W
+		Other digital part power: 1.0200213017751479e-06 W
+			|---adder power: 0.0 W
+			|---output-shift-reg power: 8.1e-07 W
+			|---input-reg power: 9.010650887573964e-09 W
+			|---output-reg power: 9.010650887573964e-09 W
+			|---input_demux power: 9.6e-08 W
+			|---output_mux power: 9.6e-08 W
+			|---joint_module power: 0.0 W
+Layer 0 :
+     Hardware power: 0.007361229900051775 W
+========================Energy Results=================================
+Hardware energy: 664.7788690173392 nJ
+		crossbar energy: 0.00196112115897385 nJ
+		DAC energy: 0.1916928 nJ
+		ADC energy: 165.15072 nJ
+		Buffer energy: 499.40660224 nJ
+			|---read buffer energy: 226.90250752 nJ
+			|---write buffer energy: 272.50409472 nJ
+		Pooling energy: 0 nJ
+		Other digital part energy: 0.027892856180227032 nJ
+			|---adder energy: 0.0 nJ
+			|---output-shift-reg energy: 0.02654208 nJ
+			|---input-reg energy: 0.0003321686343195266 nJ
+			|---input_demux energy: 0.00087869620224 nJ
+			|---output_mux energy: 0.00010300371763200001 nJ
+			|---joint_module energy: 0.0 nJ
+		NoC part energy: 0 nJ
+Layer 0 :
+     Hardware energy: 664.7788690173392 nJ
+Mapping time: 0.11723661422729492
+Hardware modeling time: 0.037801265716552734
+Total simulation time: 0.15503787994384766

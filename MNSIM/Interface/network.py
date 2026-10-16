@@ -182,11 +182,13 @@ class NetworkGraph(nn.Module):
         # load weights
         self.load_state_dict(tmp_state_dict)
 
-def get_net(b,d,dff,hardware_config = None, cate = 'lenet', num_classes = 10):
+def get_net(b,d,dff,l,h,hardware_config = None, cate = 'lenet', num_classes = 10):
     # define the NN structure
     # initial config
     d=int(d)
     dff=int(dff)
+    l=int(l)
+    h=int(h)
     if hardware_config == None:
         hardware_config = {'xbar_size': 512, 'input_bit': 2, 'weight_bit': 1, 'ADC_quantize_bit': 10, 'DAC_num': 256}
     # layer_config_list, quantize_config_list, and input_index_list
@@ -195,7 +197,7 @@ def get_net(b,d,dff,hardware_config = None, cate = 'lenet', num_classes = 10):
     input_index_list = []
     # layer by layer
     # add new NN models here (conv/fc is followed by one bn layer automatically):
-    assert cate in ['lenet', 'vgg16', 'vgg8', 'alexnet', 'resnet18','transformers']
+    assert cate in ['lenet', 'vgg16', 'vgg8', 'alexnet', 'resnet18','transformers','transformers_layer0','transformers_attention']
     if cate.startswith('lenet'):
         layer_config_list.append({'type': 'conv', 'in_channels': 3, 'out_channels': 6, 'kernel_size': 5})
         layer_config_list.append({'type': 'relu'})
@@ -210,19 +212,26 @@ def get_net(b,d,dff,hardware_config = None, cate = 'lenet', num_classes = 10):
         layer_config_list.append({'type': 'dropout'})
         layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'fc', 'in_features': 84, 'out_features': num_classes})
+    elif cate == 'transformers_layer0':
+        # dummy conv layer only, to isolate its energy (incl. buffer) from the transformer runs
+        layer_config_list.append({'type': 'conv', 'in_channels': 1, 'out_channels': 1, 'kernel_size': 1})
+    elif cate == 'transformers_attention':
+        # dummy conv layer + attention layer only, to isolate the attention buffer energy
+        layer_config_list.append({'type': 'conv', 'in_channels': 1, 'out_channels': 1, 'kernel_size': 1})
+        layer_config_list.append({'type': 'view'})
+        layer_config_list.append({'type': 'fc', 'in_features': d // h, 'out_features': l, 'slice_input': True})
     elif cate.startswith('transformers'):
         layer_config_list.append({'type': 'conv', 'in_channels': 1, 'out_channels': 1, 'kernel_size': 1})
         layer_config_list.append({'type': 'view'})
+        # Q, K, V projections
         layer_config_list.append({'type': 'fc', 'in_features': d, 'out_features': d})
-        layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'fc', 'in_features': d, 'out_features': d})
-        layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'fc', 'in_features': d, 'out_features': d})
-        layer_config_list.append({'type': 'relu'})
-        layer_config_list.append({'type': 'fc', 'in_features': d, 'out_features': d})
-        layer_config_list.append({'type': 'relu'})
+        # attention (one head): l x d/h, reads a d/h slice of the previous output
+        layer_config_list.append({'type': 'fc', 'in_features': d // h, 'out_features': l, 'slice_input': True})
+        # output projection, fed from the V projection
+        layer_config_list.append({'type': 'fc', 'in_features': d, 'out_features': d, 'input_index': [-2]})
         layer_config_list.append({'type': 'fc', 'in_features': d, 'out_features': dff})
-        layer_config_list.append({'type': 'relu'})
         layer_config_list.append({'type': 'fc', 'in_features': dff, 'out_features': d})
 
     elif cate.startswith('vgg16'):

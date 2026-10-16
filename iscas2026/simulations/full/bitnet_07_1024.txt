@@ -1,0 +1,313 @@
+Hardware description file location: /home/user/MNSIM-2.0/SimConfig.ini
+Software model file location: None
+Whether perform hardware simulation: True
+Whether perform accuracy simulation: False
+Whether consider SAFs: False
+Whether consider variations: False
+Quantization range: dynamic range (depends on the data distribution)
+run on device cpu
+weight bit 2
+Total crossbar number: 341
+========================Latency Results=================================
+ 
+Layer 0  type: conv
+Occupancy: 1.0
+total latency: 393039.368401919
+layer latency: 362319.36840192025
+Buffer latency of layer 0 : 122880 ( 31.26 %)
+     read buffer latency of layer 0 : 61440 ( 15.63 %)
+     write buffer latency of layer 0 : 61440 ( 15.63 %)
+Computing latency of layer 0 : 173998.23777792 ( 44.27 %)
+     DAC latency of layer 0 : 36864.0 ( 9.38 %)
+     ADC latency of layer 0 : 98304.0 ( 25.01 %)
+     xbar latency of layer 0 : 38830.23777792 ( 9.88 %)
+Digital part latency of layer 0 : 62965.530624 ( 16.02 %)
+     iReg latency of layer 0 : 27648.0 ( 7.03 %)
+     oReg latency of layer 0 : 3072.0 ( 0.78 %)
+     input demux latency of layer 0 : 6864.81408 ( 1.75 %)
+     output mux latency of layer 0 : 804.7165440000001 ( 0.20 %)
+     shiftreg latency of layer 0 : 24576.0 ( 6.25 %)
+     adder latency of layer 0 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 0 : 0.0 ( 0.00 %)
+Pooling module latency of layer 0 : 0 ( 0.00 %)
+Intra tile communication latency of layer 0 : 18.0 ( 0.00 %)
+Inter tile communication latency of layer 0 : 33177.59999999907 ( 8.44 %)
+     One layer merge latency of layer 0 : 30720.0 ( 7.82 %)
+     Inter tile transfer latency of layer 0 : 2457.599999999929 ( 0.63 %)
+----------------------------------------------
+Layer 1  type: fc
+Occupancy: 1.0
+total latency: 13272.743146879999
+layer latency: 10712.743146880006
+Buffer latency of layer 1 : 6400 ( 48.22 %)
+     read buffer latency of layer 1 : 3200 ( 24.11 %)
+     write buffer latency of layer 1 : 3200 ( 24.11 %)
+Computing latency of layer 1 : 453.12041088 ( 3.41 %)
+     DAC latency of layer 1 : 96.0 ( 0.72 %)
+     ADC latency of layer 1 : 256.0 ( 1.93 %)
+     xbar latency of layer 1 : 101.12041088000001 ( 0.76 %)
+Digital part latency of layer 1 : 163.972736 ( 1.24 %)
+     iReg latency of layer 1 : 72.0 ( 0.54 %)
+     oReg latency of layer 1 : 4.0 ( 0.03 %)
+     input demux latency of layer 1 : 17.87712 ( 0.13 %)
+     output mux latency of layer 1 : 2.095616 ( 0.02 %)
+     shiftreg latency of layer 1 : 64.0 ( 0.48 %)
+     adder latency of layer 1 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 1 : 4.0 ( 0.03 %)
+Pooling module latency of layer 1 : 0 ( 0.00 %)
+Intra tile communication latency of layer 1 : 3.25 ( 0.02 %)
+Inter tile communication latency of layer 1 : 6252.4 ( 47.11 %)
+     One layer merge latency of layer 1 : 3794.8 ( 28.59 %)
+     Inter tile transfer latency of layer 1 : 2457.6 ( 18.52 %)
+----------------------------------------------
+Layer 2  type: fc
+Occupancy: 1.0
+total latency: 14095.94314688
+layer latency: 11535.943146880018
+Buffer latency of layer 2 : 6400 ( 45.40 %)
+     read buffer latency of layer 2 : 3200 ( 22.70 %)
+     write buffer latency of layer 2 : 3200 ( 22.70 %)
+Computing latency of layer 2 : 453.12041088 ( 3.21 %)
+     DAC latency of layer 2 : 96.0 ( 0.68 %)
+     ADC latency of layer 2 : 256.0 ( 1.82 %)
+     xbar latency of layer 2 : 101.12041088000001 ( 0.72 %)
+Digital part latency of layer 2 : 163.972736 ( 1.16 %)
+     iReg latency of layer 2 : 72.0 ( 0.51 %)
+     oReg latency of layer 2 : 4.0 ( 0.03 %)
+     input demux latency of layer 2 : 17.87712 ( 0.13 %)
+     output mux latency of layer 2 : 2.095616 ( 0.01 %)
+     shiftreg latency of layer 2 : 64.0 ( 0.45 %)
+     adder latency of layer 2 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 2 : 4.0 ( 0.03 %)
+Pooling module latency of layer 2 : 0 ( 0.00 %)
+Intra tile communication latency of layer 2 : 3.25 ( 0.02 %)
+Inter tile communication latency of layer 2 : 7075.6 ( 50.20 %)
+     One layer merge latency of layer 2 : 4618.0 ( 32.76 %)
+     Inter tile transfer latency of layer 2 : 2457.6 ( 17.43 %)
+----------------------------------------------
+Layer 3  type: fc
+Occupancy: 1.0
+total latency: 15730.34314688
+layer latency: 13170.343146879983
+Buffer latency of layer 3 : 6400 ( 40.69 %)
+     read buffer latency of layer 3 : 3200 ( 20.34 %)
+     write buffer latency of layer 3 : 3200 ( 20.34 %)
+Computing latency of layer 3 : 453.12041088 ( 2.88 %)
+     DAC latency of layer 3 : 96.0 ( 0.61 %)
+     ADC latency of layer 3 : 256.0 ( 1.63 %)
+     xbar latency of layer 3 : 101.12041088000001 ( 0.64 %)
+Digital part latency of layer 3 : 163.972736 ( 1.04 %)
+     iReg latency of layer 3 : 72.0 ( 0.46 %)
+     oReg latency of layer 3 : 4.0 ( 0.03 %)
+     input demux latency of layer 3 : 17.87712 ( 0.11 %)
+     output mux latency of layer 3 : 2.095616 ( 0.01 %)
+     shiftreg latency of layer 3 : 64.0 ( 0.41 %)
+     adder latency of layer 3 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 3 : 4.0 ( 0.03 %)
+Pooling module latency of layer 3 : 0 ( 0.00 %)
+Intra tile communication latency of layer 3 : 3.25 ( 0.02 %)
+Inter tile communication latency of layer 3 : 8710.0 ( 55.37 %)
+     One layer merge latency of layer 3 : 3794.8 ( 24.12 %)
+     Inter tile transfer latency of layer 3 : 4915.2 ( 31.25 %)
+----------------------------------------------
+Layer 4  type: fc
+Occupancy: 1.0
+total latency: 22242.19657344
+layer latency: 19682.196573439986
+Buffer latency of layer 4 : 5440 ( 24.46 %)
+     read buffer latency of layer 4 : 2720 ( 12.23 %)
+     write buffer latency of layer 4 : 2720 ( 12.23 %)
+Computing latency of layer 4 : 226.56020544 ( 1.02 %)
+     DAC latency of layer 4 : 48.0 ( 0.22 %)
+     ADC latency of layer 4 : 128.0 ( 0.58 %)
+     xbar latency of layer 4 : 50.560205440000004 ( 0.23 %)
+Digital part latency of layer 4 : 85.986368 ( 0.39 %)
+     iReg latency of layer 4 : 36.0 ( 0.16 %)
+     oReg latency of layer 4 : 4.0 ( 0.02 %)
+     input demux latency of layer 4 : 8.93856 ( 0.04 %)
+     output mux latency of layer 4 : 1.047808 ( 0.00 %)
+     shiftreg latency of layer 4 : 32.0 ( 0.14 %)
+     adder latency of layer 4 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 4 : 4.0 ( 0.02 %)
+Pooling module latency of layer 4 : 0 ( 0.00 %)
+Intra tile communication latency of layer 4 : 3.25 ( 0.01 %)
+Inter tile communication latency of layer 4 : 16486.4 ( 74.12 %)
+     One layer merge latency of layer 4 : 2560.0 ( 11.51 %)
+     Inter tile transfer latency of layer 4 : 13926.400000000001 ( 62.61 %)
+----------------------------------------------
+Layer 5  type: fc
+Occupancy: 1.0
+total latency: 16147.94314688
+layer latency: -6094.253426559968
+Buffer latency of layer 5 : 6400 ( 39.63 %)
+     read buffer latency of layer 5 : 3200 ( 19.82 %)
+     write buffer latency of layer 5 : 3200 ( 19.82 %)
+Computing latency of layer 5 : 453.12041088 ( 2.81 %)
+     DAC latency of layer 5 : 96.0 ( 0.59 %)
+     ADC latency of layer 5 : 256.0 ( 1.59 %)
+     xbar latency of layer 5 : 101.12041088000001 ( 0.63 %)
+Digital part latency of layer 5 : 163.972736 ( 1.02 %)
+     iReg latency of layer 5 : 72.0 ( 0.45 %)
+     oReg latency of layer 5 : 4.0 ( 0.02 %)
+     input demux latency of layer 5 : 17.87712 ( 0.11 %)
+     output mux latency of layer 5 : 2.095616 ( 0.01 %)
+     shiftreg latency of layer 5 : 64.0 ( 0.40 %)
+     adder latency of layer 5 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 5 : 4.0 ( 0.02 %)
+Pooling module latency of layer 5 : 0 ( 0.00 %)
+Intra tile communication latency of layer 5 : 3.25 ( 0.02 %)
+Inter tile communication latency of layer 5 : 9127.6 ( 56.52 %)
+     One layer merge latency of layer 5 : 5441.200000000001 ( 33.70 %)
+     Inter tile transfer latency of layer 5 : 3686.3999999999996 ( 22.83 %)
+----------------------------------------------
+Layer 6  type: fc
+Occupancy: 1.0
+total latency: 26795.54314688
+layer latency: 24235.543146879994
+Buffer latency of layer 6 : 6400 ( 23.88 %)
+     read buffer latency of layer 6 : 3200 ( 11.94 %)
+     write buffer latency of layer 6 : 3200 ( 11.94 %)
+Computing latency of layer 6 : 453.12041088 ( 1.69 %)
+     DAC latency of layer 6 : 96.0 ( 0.36 %)
+     ADC latency of layer 6 : 256.0 ( 0.96 %)
+     xbar latency of layer 6 : 101.12041088000001 ( 0.38 %)
+Digital part latency of layer 6 : 163.972736 ( 0.61 %)
+     iReg latency of layer 6 : 72.0 ( 0.27 %)
+     oReg latency of layer 6 : 4.0 ( 0.01 %)
+     input demux latency of layer 6 : 17.87712 ( 0.07 %)
+     output mux latency of layer 6 : 2.095616 ( 0.01 %)
+     shiftreg latency of layer 6 : 64.0 ( 0.24 %)
+     adder latency of layer 6 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 6 : 4.0 ( 0.01 %)
+Pooling module latency of layer 6 : 0 ( 0.00 %)
+Intra tile communication latency of layer 6 : 3.25 ( 0.01 %)
+Inter tile communication latency of layer 6 : 19775.2 ( 73.80 %)
+     One layer merge latency of layer 6 : 5029.6 ( 18.77 %)
+     Inter tile transfer latency of layer 6 : 14745.6 ( 55.03 %)
+----------------------------------------------
+Layer 7  type: fc
+Occupancy: 1.0
+total latency: 13284.743146879999
+layer latency: 10724.743146880006
+Buffer latency of layer 7 : 6400 ( 48.18 %)
+     read buffer latency of layer 7 : 3200 ( 24.09 %)
+     write buffer latency of layer 7 : 3200 ( 24.09 %)
+Computing latency of layer 7 : 453.12041088 ( 3.41 %)
+     DAC latency of layer 7 : 96.0 ( 0.72 %)
+     ADC latency of layer 7 : 256.0 ( 1.93 %)
+     xbar latency of layer 7 : 101.12041088000001 ( 0.76 %)
+Digital part latency of layer 7 : 163.972736 ( 1.23 %)
+     iReg latency of layer 7 : 72.0 ( 0.54 %)
+     oReg latency of layer 7 : 4.0 ( 0.03 %)
+     input demux latency of layer 7 : 17.87712 ( 0.13 %)
+     output mux latency of layer 7 : 2.095616 ( 0.02 %)
+     shiftreg latency of layer 7 : 64.0 ( 0.48 %)
+     adder latency of layer 7 : 0.0 ( 0.00 %)
+     Jointmodule latency of layer 7 : 4.0 ( 0.03 %)
+Pooling module latency of layer 7 : 0 ( 0.00 %)
+Intra tile communication latency of layer 7 : 3.25 ( 0.02 %)
+Inter tile communication latency of layer 7 : 6264.4 ( 47.15 %)
+     One layer merge latency of layer 7 : 6264.4 ( 47.15 %)
+     Inter tile transfer latency of layer 7 : 0.0 ( 0.00 %)
+----------------------------------------------
+Entire latency: 446286.6272832003 ns
+========================Area Results=================================
+Hardware area: 371330638.0269894 um^2
+		crossbar area: 267475025.92 um^2
+		DAC area: 7309.312 um^2
+		ADC area: 72652800.0 um^2
+		Buffer area: 17449529.0 um^2
+		Pooling area: 7904875.4332 um^2
+		Other digital part area: 5841098.36178935 um^2
+			|---adder area: 0.0 um^2
+			|---output-shift-reg area: 62525.439999999995 um^2
+			|---input-reg area: 30085.997368047334 um^2
+			|---output-reg area: 30085.997368047334 um^2
+			|---input_demux area: 59531.264 um^2
+			|---output_mux area: 59531.264 um^2
+			|---joint_module area: 5599338.399053253 um^2
+Layer 0 :
+     Hardware area: 4317798.1165929 um^2
+Layer 1 :
+     Hardware area: 38860183.0493361 um^2
+Layer 2 :
+     Hardware area: 38860183.0493361 um^2
+Layer 3 :
+     Hardware area: 38860183.0493361 um^2
+Layer 4 :
+     Hardware area: 4317798.1165929 um^2
+Layer 5 :
+     Hardware area: 38860183.0493361 um^2
+Layer 6 :
+     Hardware area: 103627154.7982296 um^2
+Layer 7 :
+     Hardware area: 103627154.7982296 um^2
+========================Power Results=================================
+Hardware power: 61.31719881450408 W
+		crossbar power: 0.8365761709987499 W
+		DAC power: 0.1682343 W
+		ADC power: 54.83646 W
+		Buffer power: 1.301554072 W
+			|---read buffer power: 0.591353581 W
+			|---write buffer power: 0.710200491 W
+		Pooling power: 0 W
+		Other digital part power: 4.174374271505326 W
+			|---adder power: 0.0 W
+			|---output-shift-reg power: 0.03525201 W
+			|---input-reg power: 0.00038869244733727806 W
+			|---output-reg power: 0.00039215253727810644 W
+			|---input_demux power: 0.0041411519999999995 W
+			|---output_mux power: 0.004178016 W
+			|---joint_module power: 4.130022248520711 W
+Layer 0 :
+     Hardware power: 0.007361229900051775 W
+Layer 1 :
+     Hardware power: 6.492581234891361 W
+Layer 2 :
+     Hardware power: 6.492581234891361 W
+Layer 3 :
+     Hardware power: 6.492581234891361 W
+Layer 4 :
+     Hardware power: 0.7124127256179883 W
+Layer 5 :
+     Hardware power: 6.492581234891361 W
+Layer 6 :
+     Hardware power: 17.313549959710297 W
+Layer 7 :
+     Hardware power: 17.313549959710297 W
+========================Energy Results=================================
+Hardware energy: 18711.440023869032 nJ
+		crossbar energy: 84.47088140019088 nJ
+		DAC energy: 16.2699264 nJ
+		ADC energy: 14079.098880000001 nJ
+		Buffer energy: 4512.704385280001 nJ
+			|---read buffer energy: 2050.32119344 nJ
+			|---write buffer energy: 2462.38319184 nJ
+		Pooling energy: 0 nJ
+		Other digital part energy: 18.895950788839997 nJ
+			|---adder energy: 0.0 nJ
+			|---output-shift-reg energy: 2.26271232 nJ
+			|---input-reg energy: 0.02819281283786982 nJ
+			|---input_demux energy: 0.07457934016512001 nJ
+			|---output_mux energy: 0.008781066928128 nJ
+			|---joint_module energy: 16.520088994082844 nJ
+		NoC part energy: 0 nJ
+Layer 0 :
+     Hardware energy: 498.58415176300446 nJ
+Layer 1 :
+     Hardware energy: 1938.0502010153477 nJ
+Layer 2 :
+     Hardware energy: 1938.0502010153477 nJ
+Layer 3 :
+     Hardware energy: 1938.0502010153477 nJ
+Layer 4 :
+     Hardware energy: 124.38732929611643 nJ
+Layer 5 :
+     Hardware energy: 1938.0502010153477 nJ
+Layer 6 :
+     Hardware energy: 5168.13386937426 nJ
+Layer 7 :
+     Hardware energy: 5168.13386937426 nJ
+Mapping time: 6.585800647735596
+Hardware modeling time: 0.2587728500366211
+Total simulation time: 6.844573497772217

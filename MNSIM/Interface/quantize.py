@@ -135,7 +135,13 @@ class QuantizeLayer(nn.Module):
         ]))
         # layer information
         self.layer_info = None
+    def slice_input(self, input):
+        # fc layers with 'slice_input' only read the first in_features (e.g. one attention head of d/h)
+        if self.layer_config['type'] == 'fc' and self.layer_config.get('slice_input', False):
+            return input[:, :self.layer_config['in_features']]
+        return input
     def structure_forward(self, input):
+        input = self.slice_input(input)
         # TRADITION
         # get the layer structure
         input_shape = input.shape
@@ -181,6 +187,7 @@ class QuantizeLayer(nn.Module):
         self.layer_info['Outputindex'] = [1]
         return output
     def forward(self, input, method = 'SINGLE_FIX_TEST', adc_action = 'SCALE'):
+        input = self.slice_input(input)
         METHOD = method
         # float method
         if METHOD == 'TRADITION':
@@ -261,6 +268,7 @@ class QuantizeLayer(nn.Module):
                 base = base * step
         return bit_weights
     def set_weights_forward(self, input, bit_weights, adc_action):
+        input = self.slice_input(input)
         assert self.training == False
         output = None
         input_list = torch.split(input, self.split_input, dim = 1)

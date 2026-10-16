@@ -35,6 +35,10 @@ def main():
         help="transformer model embedding dimension")
     parser.add_argument("-dff", "--feed_forward", default=False,
         help="transformer model feed forward dimension")
+    parser.add_argument("-l", "--sequence_length", default=False,
+        help="transformer model sequence length")
+    parser.add_argument("-H", "--num_heads", default=False,
+        help="transformer model number of attention heads")
     parser.add_argument("-b", "--weight_bit", default=False,
         help="quantization weight bit")
     parser.add_argument("-HWdes", "--hardware_description", default=SimConfig_path,
@@ -77,7 +81,7 @@ def main():
 
     mapping_start_time = time.time()
     __TestInterface = TrainTestInterface(network_module=args.NN, dataset_module='MNSIM.Interface.cifar10',  
-        SimConfig_path=args.hardware_description,b=args.weight_bit ,d=args.embedding_dimension, dff=args.feed_forward, weights_file=args.weights, device=args.device)
+        SimConfig_path=args.hardware_description,b=args.weight_bit ,d=args.embedding_dimension, dff=args.feed_forward, l=args.sequence_length, h=args.num_heads, weights_file=args.weights, device=args.device)
     structure_file = __TestInterface.get_structure()
     TCG_mapping = TCG(structure_file, args.hardware_description)
     # print(TCG_mapping.max_inbuf_size)
