@@ -39,7 +39,8 @@ LAYER_LATENCY_PATTERNS = {
     'buffer': re.compile(r'Buffer latency of layer \d+ : ([\d.]+)'),
     'buf_read': re.compile(r'read buffer latency of layer \d+ : ([\d.]+)'),
     'buf_write': re.compile(r'write buffer latency of layer \d+ : ([\d.]+)'),
-    'computing': re.compile(r'Computing latency of layer \d+ : ([\d.]+)'),
+    'computing': re.compile(r'Computing latency of layer \d+ : ([\d.]+)'),   # xbar + DAC + ADC
+    'xbar': re.compile(r'xbar latency of layer \d+ : ([\d.]+)'),             # crossbar read only
     'digital': re.compile(r'Digital part latency of layer \d+ : ([\d.]+)'),
     'intra': re.compile(r'Intra tile communication latency of layer \d+ : ([\d.]+)'),
     'inter': re.compile(r'Inter tile communication latency of layer \d+ : ([\d.]+)'),

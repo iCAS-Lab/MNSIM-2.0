@@ -17,7 +17,7 @@ Speedup (tokens/s) and tokens/J change of PIM v2 over PIM v1, range over the 7 m
 
 | Context length | 256 | 512 | 1024 | 2048 | 4096 | 8192 |
 |---|---|---|---|---|---|---|
-| Speedup v2 / v1 | 2.8–5.4× | 4.3–8.2× | 6.6–13.1× | 12.3–25.2× | 23.1–49.3× | 45.2–97.7× |
+| Speedup v2 / v1 | 2.8–5.4× | 4.3–8.3× | 6.6–13.1× | 12.3–25.2× | 23.1–49.4× | 45.3–97.8× |
 | Tokens/J change | +0.9 to +2.6% | +0.4 to +2.4% | -8.6 to +3.2% | -13.4 to +5.9% | -18.3 to +10.5% | -22.5 to +17.6% |
 
 Throughput always improves, because the attention heads run in parallel. Energy efficiency improves
@@ -29,13 +29,13 @@ At context length 2048:
 
 | Model | v1 tokens/s | v2 tokens/s | Speedup | v1 tokens/J | v2 tokens/J | Change |
 |---|---|---|---|---|---|---|
-| Llama3 - 1B | 15.46 | 360.78 | 23.34× | 1089.9 | 983.6 | -9.7% |
-| BitNet - 0.7B | 13.79 | 312.17 | 22.63× | 1384.8 | 1199.6 | -13.4% |
-| Gemma2 - 2B | 17.56 | 216.03 | 12.30× | 685.6 | 725.8 | +5.9% |
-| Llama3 - 3B | 7.01 | 164.63 | 23.49× | 349.0 | 331.2 | -5.1% |
-| Phi3 - 3.8B | 5.77 | 145.23 | 25.16× | 301.6 | 270.4 | -10.4% |
-| BitNet - 8B | 4.55 | 91.07 | 20.02× | 157.0 | 151.4 | -3.6% |
-| Llama3 - 8B | 4.55 | 91.07 | 20.02× | 157.0 | 151.4 | -3.6% |
+| Llama3 - 1B | 15.46 | 361.51 | 23.39× | 1089.9 | 983.6 | -9.7% |
+| BitNet - 0.7B | 13.79 | 312.99 | 22.69× | 1384.8 | 1199.6 | -13.4% |
+| Gemma2 - 2B | 17.56 | 216.62 | 12.34× | 685.6 | 725.8 | +5.9% |
+| Llama3 - 3B | 7.01 | 164.90 | 23.53× | 349.0 | 331.2 | -5.1% |
+| Phi3 - 3.8B | 5.77 | 145.47 | 25.20× | 301.6 | 270.4 | -10.4% |
+| BitNet - 8B | 4.55 | 91.17 | 20.04× | 157.0 | 151.4 | -3.6% |
+| Llama3 - 8B | 4.55 | 91.17 | 20.04× | 157.0 | 151.4 | -3.6% |
 
 All numbers: [`iscas2026/results/pim_v1_vs_v2_summary.csv`](iscas2026/results/pim_v1_vs_v2_summary.csv).
 All figures: [`iscas2026/figures/`](iscas2026/figures); compact figures used in the paper:
@@ -125,7 +125,7 @@ layer (4th fc) and the six non-attention layers. Per transformer layer, in ns:
 |---|---|---|
 | Non-attention (v1 and v2) | max(Q, K, V) + O + FFN up + FFN down | MNSIM `total latency` |
 | PIM v1 attention | `Total_Attention_Cycles` × 10 ns | `edge_os.csv` |
-| PIM v2 attention | 2 × xbar + 2 × (buffer read + 10 × buffer write) | attention layer: `Computing latency`, `read/write buffer latency` |
+| PIM v2 attention | 2 × xbar + 2 × (buffer read + 10 × buffer write) | attention layer: `xbar latency` (crossbar read only), `read/write buffer latency` |
 | Per token | layer latency × `n_layers`; tokens/s = 1 / per-token latency | |
 
 Q, K and V run in parallel, hence the max. The `h` heads run in parallel on separate crossbars, so
@@ -164,8 +164,8 @@ derived ones (`mnsim_attention_*` columns) and names the report it came from (`m
 For example, Phi3 at l = 256 (`simulations/full/phi3_256.txt`, `Layer 4`):
 
 ```
-Computing latency 226.56, read buffer latency 880, write buffer latency 720 (ns)
-v2 attention = 2 × 226.56 + 2 × (880 + 10 × 720) = 16613.1 ns        -> v2_attention_ns
+xbar latency 50.56, read buffer latency 880, write buffer latency 720 (ns)
+v2 attention = 2 × 50.56 + 2 × (880 + 10 × 720) = 16261.1 ns         -> v2_attention_ns
 ```
 
 ## Notes and limitations
@@ -173,7 +173,9 @@ v2 attention = 2 × 226.56 + 2 × (880 + 10 × 720) = 16613.1 ns        -> v2_at
 * **Attention latency levels off from l ≈ 1024.** MNSIM spreads the `l` output columns over more
   crossbars in parallel: computing latency stays constant and buffer read/write latency stops growing.
   Only inter-tile communication of the attention layer keeps growing with `l`, and the formula does
-  not include it (switch `ATTN_COMPUTE_FIELD` to `'layer'` in `config.py` to include the whole layer).
+  not include it. `ATTN_COMPUTE_FIELD` in `config.py` selects the MNSIM latency used for the `l x d/h`
+  term: `'xbar'` (default, crossbar read only), `'computing'` (crossbar + DAC + ADC) or `'layer'`
+  (whole layer, including buffers and communication).
 * **Per-head scaling** is set in `config.py`: `ATTN_ENERGY_PER_HEAD = True` multiplies the attention
   energy by `h`; `BUFFER_PER_HEAD = False` keeps latency per head (heads in parallel). Set
   `ATTN_ENERGY_PER_HEAD = False` for the earlier single-head energy.

@@ -6,6 +6,7 @@ Per transformer layer (ns):
   non-attention (both designs)   max(Q, K, V) + O + FFN up + FFN down       MNSIM 'total latency'
   PIM v1 attention               Total_Attention_Cycles x TPU_CYCLE_NS      edge_os.csv (TPU)
   PIM v2 attention               2 x xbar(l x d/h) + 2 x (buffer read + 10 x buffer write)
+                                 xbar = MNSIM 'xbar latency' (crossbar read, cfg.ATTN_COMPUTE_FIELD)
                                  values of the attention layer in the MNSIM report; the h heads run
                                  in parallel, so one head's latency is the layer's latency
 
@@ -63,6 +64,7 @@ def extract():
                 'non_attention_digital_ns': qkv_parallel_sum(non_attn, 'digital'),
                 'non_attention_communication_ns': qkv_parallel_sum(non_attn, 'intra') + qkv_parallel_sum(non_attn, 'inter'),
                 # raw MNSIM values of the attention layer (one l x d/h matmul)
+                'mnsim_attention_xbar_ns': attn['xbar'],
                 'mnsim_attention_computing_ns': attn['computing'],
                 'mnsim_attention_buffer_read_ns': attn['buf_read'],
                 'mnsim_attention_buffer_write_ns': attn['buf_write'],

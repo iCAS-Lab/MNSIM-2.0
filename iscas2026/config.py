@@ -44,7 +44,8 @@ ATTN_FC_INDEX = 3  # position of the attention layer among the fc layers
 # latency of one head is the latency of the layer.
 ATTN_MATMULS = 2            # Q.K^T and score.V
 BUFFER_WRITE_FACTOR = 10
-ATTN_COMPUTE_FIELD = 'computing'  # MNSIM field for the l x d/h term: 'computing' (xbar + DAC + ADC) or 'layer'
+# MNSIM field for the l x d/h term: 'xbar' (crossbar read only), 'computing' (xbar + DAC + ADC) or 'layer'
+ATTN_COMPUTE_FIELD = 'xbar'
 
 # energy = h x [(hardware - buffer) + BUFFER_READ_ENERGY_FACTOR x read + BUFFER_WRITE_ENERGY_FACTOR x write]
 # All h heads compute and access the buffers, so the whole attention energy is counted h times.
