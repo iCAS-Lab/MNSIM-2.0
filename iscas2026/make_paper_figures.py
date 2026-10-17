@@ -68,11 +68,14 @@ def throughput_energy(df):
         ax.set_title(title)
         ax.grid(True, linestyle=':', linewidth=0.5)
     axes[0].set_yscale('log')
-    axes[0].set_ylim(0.9, 20)
-    axes[0].set_yticks([1, 2, 5, 10, 20])
-    axes[0].set_yticklabels(['1', '2', '5', '10', '20'])
+    axes[0].set_ylim(2, 120)
+    axes[0].set_yticks([2, 5, 10, 20, 50, 100])
+    axes[0].set_yticklabels(['2', '5', '10', '20', '50', '100'])
     axes[1].axhline(0, color='black', linewidth=0.6)
-    axes[0].legend(ncol=2, frameon=False, loc='upper left', handlelength=1.5, columnspacing=0.8)
+    lo = df['tokens_per_J_improvement_v2_vs_v1_pct'].min()
+    hi = df['tokens_per_J_improvement_v2_vs_v1_pct'].max()
+    axes[1].set_ylim(lo - 0.05 * (hi - lo), hi + 0.75 * (hi - lo))  # headroom for the legend
+    axes[1].legend(ncol=3, frameon=False, loc='upper left', handlelength=1.2, columnspacing=0.5, fontsize=5.5)
 
     ax = axes[2]
     d = df[df['context_length'] == 2048].set_index('model').loc[ORDER]
@@ -85,7 +88,7 @@ def throughput_energy(df):
     for xi, v in zip(x, d['v2_tokens_per_s']):
         ax.text(xi + w, v * 1.15, f'{v:.0f}', ha='center', va='bottom', fontsize=5)
     ax.set_yscale('log')
-    ax.set_ylim(0.3, 1000)
+    ax.set_ylim(0.3, 3000)
     ax.set_xticks(x)
     ax.set_xticklabels([SHORT[m] for m in ORDER], rotation=30, ha='right')
     ax.set_ylabel('Tokens/s')

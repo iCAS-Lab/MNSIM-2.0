@@ -5,9 +5,9 @@ Per transformer layer (ns):
 
   non-attention (both designs)   max(Q, K, V) + O + FFN up + FFN down       MNSIM 'total latency'
   PIM v1 attention               Total_Attention_Cycles x TPU_CYCLE_NS      edge_os.csv (TPU)
-  PIM v2 attention               2 x xbar(l x d/h) + 2 x h x (buffer read + 10 x buffer write)
-                                 values of the attention layer in the MNSIM report; heads compute in
-                                 parallel, but each head reads/writes the buffers, hence x h
+  PIM v2 attention               2 x xbar(l x d/h) + 2 x (buffer read + 10 x buffer write)
+                                 values of the attention layer in the MNSIM report; the h heads run
+                                 in parallel, so one head's latency is the layer's latency
 
 Per token: latency x n_layers, tokens/s = 1 / (n_layers x latency).
 
@@ -25,7 +25,8 @@ from mnsim_parser import parse_layers, split_transformer_layers, qkv_parallel_su
 def pim_v2_attention_latency(attn, heads):
     """(xbar part, buffer part) of the PIM v2 attention latency in ns.
 
-    The heads compute in parallel (xbar counted once), but each head reads and writes the buffers.
+    The heads run in parallel, so one head's latency is the layer's latency
+    (cfg.BUFFER_PER_HEAD = True would count the buffer term once per head instead).
     """
     xbar = cfg.ATTN_MATMULS * attn[cfg.ATTN_COMPUTE_FIELD]
     buffer_heads = heads if cfg.BUFFER_PER_HEAD else 1
