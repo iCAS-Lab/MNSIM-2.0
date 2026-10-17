@@ -5,8 +5,9 @@ Per transformer layer (ns):
 
   non-attention (both designs)   max(Q, K, V) + O + FFN up + FFN down       MNSIM 'total latency'
   PIM v1 attention               Total_Attention_Cycles x TPU_CYCLE_NS      edge_os.csv (TPU)
-  PIM v2 attention               2 x xbar(l x d/h) + 2 x (buffer read + 10 x buffer write)
-                                 values of the attention layer in the MNSIM report
+  PIM v2 attention               2 x xbar(l x d/h) + 2 x h x (buffer read + 10 x buffer write)
+                                 values of the attention layer in the MNSIM report; heads compute in
+                                 parallel, but each head reads/writes the buffers, hence x h
 
 Per token: latency x n_layers, tokens/s = 1 / (n_layers x latency).
 
@@ -21,10 +22,14 @@ import config as cfg
 from mnsim_parser import parse_layers, split_transformer_layers, qkv_parallel_sum
 
 
-def pim_v2_attention_latency(attn):
-    """(xbar part, buffer part) of the PIM v2 attention latency in ns; heads run in parallel."""
+def pim_v2_attention_latency(attn, heads):
+    """(xbar part, buffer part) of the PIM v2 attention latency in ns.
+
+    The heads compute in parallel (xbar counted once), but each head reads and writes the buffers.
+    """
     xbar = cfg.ATTN_MATMULS * attn[cfg.ATTN_COMPUTE_FIELD]
-    buffer = cfg.ATTN_MATMULS * (attn['buf_read'] + cfg.BUFFER_WRITE_FACTOR * attn['buf_write'])
+    buffer_heads = heads if cfg.BUFFER_PER_HEAD else 1
+    buffer = cfg.ATTN_MATMULS * buffer_heads * (attn['buf_read'] + cfg.BUFFER_WRITE_FACTOR * attn['buf_write'])
     return xbar, buffer
 
 
@@ -42,7 +47,7 @@ def extract():
             attn, non_attn = split_transformer_layers(parse_layers(report), cfg.ATTN_FC_INDEX)
             tpu = edge_os[(m['edge_os'], l)]
 
-            attn_xbar, attn_buffer = pim_v2_attention_latency(attn)
+            attn_xbar, attn_buffer = pim_v2_attention_latency(attn, m['heads'])
             row = {
                 'model': name,
                 'display': m['display'],

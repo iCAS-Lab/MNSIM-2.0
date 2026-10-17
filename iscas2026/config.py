@@ -39,14 +39,21 @@ WEIGHT_BIT = 2
 ATTN_FC_INDEX = 3  # position of the attention layer among the fc layers
 
 # ----------------------------------------------------------------------------- PIM v2 attention formulas
-# latency = ATTN_MATMULS x xbar latency + ATTN_MATMULS x (buffer read + BUFFER_WRITE_FACTOR x buffer write)
+# latency = ATTN_MATMULS x xbar latency + ATTN_MATMULS x h x (buffer read + BUFFER_WRITE_FACTOR x buffer write)
+# The h heads compute in parallel on separate crossbars (one head is simulated), but every head still
+# reads and writes its own data through the buffers, so the buffer terms are counted h times.
 ATTN_MATMULS = 2            # Q.K^T and score.V
 BUFFER_WRITE_FACTOR = 10
 ATTN_COMPUTE_FIELD = 'computing'  # MNSIM field for the l x d/h term: 'computing' (xbar + DAC + ADC) or 'layer'
 
-# energy = (hardware - buffer) + BUFFER_READ_ENERGY_FACTOR x read + BUFFER_WRITE_ENERGY_FACTOR x write
+# energy = h x [(hardware - buffer) + BUFFER_READ_ENERGY_FACTOR x read + BUFFER_WRITE_ENERGY_FACTOR x write]
+# All h heads compute and access the buffers, so the whole attention energy is counted h times.
 BUFFER_READ_ENERGY_FACTOR = 2
 BUFFER_WRITE_ENERGY_FACTOR = 10
+
+# per-head scaling; set both False to reproduce the earlier single-head results
+BUFFER_PER_HEAD = True         # latency: buffer term x h (compute stays parallel, counted once)
+ATTN_ENERGY_PER_HEAD = True    # energy: whole attention energy x h
 
 # ----------------------------------------------------------------------------- PIM v1 (attention on TPU)
 TPU_CYCLE_NS = 10

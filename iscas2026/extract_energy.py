@@ -11,9 +11,9 @@ isolated with two extra runs per model:
 
 PIM v2 attention energy per transformer layer (nJ):
 
-  non_buffer = hardware - (read buffer + write buffer)
-  new_buffer = 2 x read buffer + 10 x write buffer
-  attention  = non_buffer + new_buffer
+  non_buffer = h x (hardware - (read buffer + write buffer))
+  new_buffer = h x (2 x read buffer + 10 x write buffer)
+  attention  = non_buffer + new_buffer                      (every head computes and accesses the buffers)
 
 Non-attention energy (both designs) = per-layer MNSIM energy of Q, K, V, O, FFN up, FFN down.
 Its component split (crossbar, DAC, ADC, buffer, other digital) = full run - (conv + attention) run.
@@ -41,10 +41,11 @@ def isolated_attention(name, l):
     return {key: both[key] - layer0[key] for key in ('hardware', 'buf_read', 'buf_write')}, both
 
 
-def pim_v2_attention_energy(iso):
+def pim_v2_attention_energy(iso, heads):
     """(non_buffer, new_buffer) of the PIM v2 attention energy in nJ."""
-    non_buffer = iso['hardware'] - (iso['buf_read'] + iso['buf_write'])
-    new_buffer = cfg.BUFFER_READ_ENERGY_FACTOR * iso['buf_read'] + cfg.BUFFER_WRITE_ENERGY_FACTOR * iso['buf_write']
+    n = heads if cfg.ATTN_ENERGY_PER_HEAD else 1
+    non_buffer = n * (iso['hardware'] - (iso['buf_read'] + iso['buf_write']))
+    new_buffer = n * (cfg.BUFFER_READ_ENERGY_FACTOR * iso['buf_read'] + cfg.BUFFER_WRITE_ENERGY_FACTOR * iso['buf_write'])
     return non_buffer, new_buffer
 
 
@@ -69,7 +70,7 @@ def extract(latency):
             if not math.isclose(sum(components.values()), non_attention, rel_tol=1e-6):
                 raise ValueError(f'{name} l={l}: energy components do not add up to the non-attention energy')
 
-            non_buffer, new_buffer = pim_v2_attention_energy(iso)
+            non_buffer, new_buffer = pim_v2_attention_energy(iso, m['heads'])
             v1_attention = tpu_attention_ns[(name, l)] * 1e-9 * cfg.TPU_POWER_W * 1e9  # nJ per transformer layer
 
             row = {

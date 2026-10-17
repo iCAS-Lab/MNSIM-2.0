@@ -13,24 +13,27 @@ Everything for the paper lives in [`iscas2026/`](iscas2026); the rest of the rep
 
 ## Results at a glance (edge, 2-bit weights)
 
-Speedup (tokens/s) and tokens/J improvement of PIM v2 over PIM v1, range over the 7 models:
+Speedup (tokens/s) and tokens/J change of PIM v2 over PIM v1, range over the 7 models:
 
 | Context length | 256 | 512 | 1024 | 2048 | 4096 | 8192 |
 |---|---|---|---|---|---|---|
-| Speedup v2 / v1 | 2.8–5.4× | 4.3–8.2× | 6.6–13.1× | 12.3–25.2× | 23.1–49.3× | 45.2–97.7× |
-| Tokens/J improvement | 2.1–8.6% | 3.9–16.3% | 7.5–31.0% | 14.9–60.2% | 29.4–115.5% | 57.8–215.1% |
+| Speedup v2 / v1 | 1.1–1.5× | 1.1–1.9× | 1.0–2.3× | 2.0–4.2× | 3.9–8.1× | 7.7–15.8× |
+| Tokens/J change | +0.9 to +2.6% | +0.4 to +2.4% | -8.6 to +3.2% | -13.4 to +5.9% | -18.3 to +10.5% | -22.5 to +17.6% |
+
+Throughput always improves. Energy efficiency improves at short contexts; at long contexts only the
+8-head Gemma2-2B gains, because the per-head KV-cache buffer traffic grows with the number of heads.
 
 At context length 2048:
 
-| Model | v1 tokens/s | v2 tokens/s | Speedup | v1 tokens/J | v2 tokens/J | Improvement |
+| Model | v1 tokens/s | v2 tokens/s | Speedup | v1 tokens/J | v2 tokens/J | Change |
 |---|---|---|---|---|---|---|
-| Llama3 - 1B | 15.46 | 360.78 | 23.34× | 1089.9 | 1486.7 | 36.4% |
-| BitNet - 0.7B | 13.79 | 312.17 | 22.63× | 1384.8 | 2218.4 | 60.2% |
-| Gemma2 - 2B | 17.56 | 216.03 | 12.30× | 685.6 | 795.2 | 16.0% |
-| Llama3 - 3B | 7.01 | 164.63 | 23.49× | 349.0 | 428.9 | 22.9% |
-| Phi3 - 3.8B | 5.77 | 145.23 | 25.16× | 301.6 | 375.4 | 24.5% |
-| BitNet - 8B | 4.55 | 91.07 | 20.02× | 157.0 | 180.3 | 14.9% |
-| Llama3 - 8B | 4.55 | 91.07 | 20.02× | 157.0 | 180.3 | 14.9% |
+| Gemma2 - 2B | 17.56 | 74.08 | 4.22× | 685.6 | 725.8 | +5.9% |
+| Llama3 - 1B | 15.46 | 30.81 | 1.99× | 1089.9 | 983.6 | -9.7% |
+| BitNet - 0.7B | 13.79 | 27.60 | 2.00× | 1384.8 | 1199.6 | -13.4% |
+| Llama3 - 3B | 7.01 | 21.33 | 3.04× | 349.0 | 331.2 | -5.1% |
+| Phi3 - 3.8B | 5.77 | 14.71 | 2.55× | 301.6 | 270.4 | -10.4% |
+| BitNet - 8B | 4.55 | 13.54 | 2.98× | 157.0 | 151.4 | -3.6% |
+| Llama3 - 8B | 4.55 | 13.54 | 2.98× | 157.0 | 151.4 | -3.6% |
 
 All numbers: [`iscas2026/results/pim_v1_vs_v2_summary.csv`](iscas2026/results/pim_v1_vs_v2_summary.csv).
 All figures: [`iscas2026/figures/`](iscas2026/figures).
@@ -116,10 +119,11 @@ layer (4th fc) and the six non-attention layers. Per transformer layer, in ns:
 |---|---|---|
 | Non-attention (v1 and v2) | max(Q, K, V) + O + FFN up + FFN down | MNSIM `total latency` |
 | PIM v1 attention | `Total_Attention_Cycles` × 10 ns | `edge_os.csv` |
-| PIM v2 attention | 2 × xbar + 2 × (buffer read + 10 × buffer write) | attention layer: `Computing latency`, `read/write buffer latency` |
+| PIM v2 attention | 2 × xbar + 2 × h × (buffer read + 10 × buffer write) | attention layer: `Computing latency`, `read/write buffer latency` |
 | Per token | layer latency × `n_layers`; tokens/s = 1 / per-token latency | |
 
-Q, K and V run in parallel, hence the max. The latency breakdown figures apply the same rule to
+Q, K and V run in parallel, hence the max. The h heads compute in parallel on separate crossbars
+(one head is simulated), but each head reads and writes the buffers, so the buffer term is counted h times. The latency breakdown figures apply the same rule to
 MNSIM's computing, buffer, digital and intra + inter tile communication latencies.
 
 ## How energy is extracted (`extract_energy.py`)
@@ -137,7 +141,7 @@ Per transformer layer, in nJ:
 |---|---|
 | Non-attention (v1 and v2) | sum of MNSIM per-layer energy of Q, K, V, O, FFN up, FFN down |
 | Non-attention components | full run − (conv + attention) run, for crossbar, DAC, ADC, buffer, other digital |
-| PIM v2 attention | (hardware − buffer) + 2 × read buffer + 10 × write buffer |
+| PIM v2 attention | h × [(hardware − buffer) + 2 × read buffer + 10 × write buffer] (every head computes and accesses the buffers) |
 | PIM v1 attention | TPU attention latency × 4.0713 mW |
 | Per token | × `n_layers`; tokens/J = 1 / per-token energy |
 | Words per battery | tokens/J × 18000 J / 1.5 tokens per word |
@@ -152,8 +156,8 @@ derived ones (`mnsim_attention_*` columns) and names the report it came from (`m
 For example, Phi3 at l = 256 (`simulations/full/phi3_256.txt`, `Layer 4`):
 
 ```
-Computing latency 226.56, read buffer latency 880, write buffer latency 720 (ns)
-v2 attention = 2 × 226.56 + 2 × (880 + 10 × 720) = 16613.1 ns        -> v2_attention_ns
+Computing latency 226.56, read buffer latency 880, write buffer latency 720 (ns), h = 32
+v2 attention = 2 × 226.56 + 2 × 32 × (880 + 10 × 720) = 517573.1 ns   -> v2_attention_ns
 ```
 
 ## Notes and limitations
@@ -162,6 +166,8 @@ v2 attention = 2 × 226.56 + 2 × (880 + 10 × 720) = 16613.1 ns        -> v2_at
   crossbars in parallel: computing latency stays constant and buffer read/write latency stops growing.
   Only inter-tile communication of the attention layer keeps growing with `l`, and the formula does
   not include it (switch `ATTN_COMPUTE_FIELD` to `'layer'` in `config.py` to include the whole layer).
+* **Per-head scaling** is set by `BUFFER_PER_HEAD` (latency buffer term × h) and `ATTN_ENERGY_PER_HEAD`
+  (attention energy × h) in `config.py`; set both to `False` for the earlier single-head numbers.
 * **Energy formula** has no × 2 for the two matmuls (unlike latency), as specified.
 * **PIM v1 energy** counts the TPU attention energy per transformer layer. Set
   `OLD_ATTN_ENERGY_AS_PUBLISHED = True` in `config.py` to reproduce the original notebook, which added it
