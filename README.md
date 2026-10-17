@@ -38,8 +38,8 @@ At context length 2048:
 | Llama3 - 8B | 4.55 | 91.17 | 20.04× | 157.0 | 151.4 | -3.6% |
 
 All numbers: [`iscas2026/results/pim_v1_vs_v2_summary.csv`](iscas2026/results/pim_v1_vs_v2_summary.csv).
-All figures: [`iscas2026/figures/`](iscas2026/figures); compact figures used in the paper:
-[`iscas2026/paper_figures/`](iscas2026/paper_figures).
+All figures: [`iscas2026/figures/`](iscas2026/figures); figures used in the paper, in the style of the
+PIM-LLM paper (PIM-LLM vs PIM-LLM v2): [`iscas2026/paper_figures/`](iscas2026/paper_figures).
 
 ## Quick start
 
@@ -56,7 +56,7 @@ bash iscas2026/run_simulations.sh [jobs]   # MNSIM reports  -> iscas2026/simulat
 python iscas2026/extract_latency.py        # reports + edge_os.csv -> iscas2026/results/latency.csv
 python iscas2026/extract_energy.py         # reports -> iscas2026/results/energy.csv
 python iscas2026/make_figures.py           # CSVs -> iscas2026/results/pim_v1_vs_v2_summary.csv, iscas2026/figures/
-python iscas2026/make_paper_figures.py     # CSVs -> iscas2026/paper_figures/ (IEEE-column PDFs for the paper)
+python iscas2026/make_paper_figures.py     # CSVs -> iscas2026/paper_figures/ (PIM-LLM-style PNGs for the paper)
 ```
 
 Use `PYTHON=python3 bash ...` if your interpreter is not called `python`. On a SLURM cluster:
@@ -74,7 +74,8 @@ iscas2026/
   extract_latency.py   PIM v1 / v2 latency and tokens/s           -> results/latency.csv
   extract_energy.py    PIM v1 / v2 energy and tokens/J            -> results/energy.csv
   make_figures.py      PIM v1 vs v2 figures, every context length -> figures/
-  make_paper_figures.py  two compact figures for the paper        -> paper_figures/
+  make_paper_figures.py  paper figures, PIM-LLM style (tokens/s, tokens/J,
+                       words/battery, latency breakdown per l)  -> paper_figures/
   run_all.sh           all of the above
   data/edge_os.csv     ScaleSim TPU results (attention cycles for PIM v1, TPU-only baseline)
   simulations/full/       {model}_{l}.txt              full transformer layer

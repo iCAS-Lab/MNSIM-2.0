@@ -1,174 +1,231 @@
 """
-Compact, IEEE-column-sized figures for the ISCAS 2026 paper (vector PDF).
+Paper figures in the style of the PIM-LLM paper (same colors, fonts, bar labels and ratio lines),
+comparing PIM-LLM (v1, attention on TPU) with PIM-LLM v2 (attention on PIM).
 
     python iscas2026/make_paper_figures.py      (after extract_latency.py and extract_energy.py)
 
-Writes into iscas2026/paper_figures/:
-  throughput_energy.pdf     (a) speedup v2/v1 vs l  (b) tokens/J improvement vs l  (c) tokens/s at l=2048
-  breakdown.pdf             latency breakdown at l=256 and l=8192, energy breakdown at l=8192
-BitNet-8B is left out: same architecture as Llama3-8B, so the same throughput and energy.
+Writes into iscas2026/paper_figures/, one PNG per context length l:
+  tokens_per_second_{l}.png      bars + speedup line            (PIM-LLM Fig. 8 style)
+  tokens_per_joule_{l}.png       bars + improvement (%) line    (PIM-LLM Fig. 10 style)
+  words_per_battery_{l}.png      bars                           (PIM-LLM Fig. 11 style)
+  latency_distribution_{l}.png   stacked % bars + zoom inset    (PIM-LLM Fig. 9 style)
+BitNet-8B is left out, as in PIM-LLM: same architecture as Llama3-8B, so the same throughput and energy.
 """
-import glob
+import re
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
 import numpy as np
 import pandas as pd
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import config as cfg
 
 OUT = cfg.ISCAS_DIR / 'paper_figures'
-MODELS = [m for m in cfg.MODELS if m != 'bitnet_8B']
-SHORT = {'bitnet_07': 'BitNet-0.7B', 'llama32_1B': 'Llama3-1B', 'gemma2': 'Gemma2-2B',
-         'llama32_3B': 'Llama3-3B', 'phi3': 'Phi3-3.8B', 'llama3_8B': 'Llama3-8B'}
-ORDER = ['bitnet_07', 'llama32_1B', 'gemma2', 'llama32_3B', 'phi3', 'llama3_8B']
-MODEL_COLORS = dict(zip(ORDER, ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']))
-MARKERS = dict(zip(ORDER, ['o', 's', '^', 'D', 'v', 'P']))
-TPU_COLOR, V1_COLOR, V2_COLOR = '#BBBBBB', '#457B9D', '#E63946'
+# model order and names as in the PIM-LLM paper
+ORDER = ['bitnet_07', 'gemma2', 'llama32_1B', 'llama32_3B', 'phi3', 'llama3_8B']
+NAMES = {'bitnet_07': 'BitNet - 0.7B', 'gemma2': 'Gemma2 - 2B', 'llama32_1B': 'Llama3 - 1B',
+         'llama32_3B': 'Llama3 - 3B', 'phi3': 'Phi3 - 3.8B', 'llama3_8B': 'Llama3 - 8B'}
+V1, V2 = 'PIM-LLM', 'PIM-LLM v2'
 
-# Times-like font: TeX Gyre Termes ships with TeX Live; falls back to whatever serif is installed
-for path in glob.glob('/usr/share/texmf/fonts/opentype/public/tex-gyre/texgyretermes-*.otf') + \
-        glob.glob('/usr/share/texlive/texmf-dist/fonts/opentype/public/tex-gyre/texgyretermes-*.otf'):
-    font_manager.fontManager.addfont(path)
-
-plt.rcParams.update({
-    'font.family': 'serif', 'font.serif': ['TeX Gyre Termes', 'Times New Roman', 'Times', 'Nimbus Roman', 'DejaVu Serif'],
-    'mathtext.fontset': 'stix', 'font.size': 7, 'axes.labelsize': 7, 'axes.titlesize': 7,
-    'xtick.labelsize': 6, 'ytick.labelsize': 6, 'legend.fontsize': 6,
-    'axes.linewidth': 0.6, 'lines.linewidth': 1.0, 'lines.markersize': 3,
-    'pdf.fonttype': 42, 'savefig.bbox': 'tight', 'savefig.pad_inches': 0.01,
-})
+plt.rcParams['font.sans-serif'] = ['Liberation Sans', 'Arial', 'Nimbus Sans', 'DejaVu Sans']
+plt.rcParams['font.family'] = 'sans-serif'
 
 
 def load():
     latency = pd.read_csv(cfg.RESULTS_DIR / 'latency.csv')
     energy = pd.read_csv(cfg.RESULTS_DIR / 'energy.csv')
     df = latency.merge(energy, on=['model', 'display', 'context_length', 'n_layers'])
-    return df[df['model'].isin(MODELS)]
+    df['v1_words'] = df['v1_tokens_per_J'] * cfg.BATTERY_J / cfg.TOKENS_PER_WORD
+    df['v2_words'] = df['v2_tokens_per_J'] * cfg.BATTERY_J / cfg.TOKENS_PER_WORD
+    return df
 
 
-def throughput_energy(df):
-    fig, axes = plt.subplots(1, 3, figsize=(7.16, 1.75), gridspec_kw={'width_ratios': [1, 1, 1.25]})
-    ls = cfg.CONTEXT_LENGTHS
+def at(df, l):
+    return df[df['context_length'] == l].set_index('model').loc[ORDER].reset_index()
 
-    for ax, col, ylabel, title in (
-        (axes[0], 'speedup_v2_vs_v1', 'Tokens/s speedup (v2/v1)', '(a) Throughput'),
-        (axes[1], 'tokens_per_J_improvement_v2_vs_v1_pct', 'Tokens/J improvement (%)', '(b) Energy efficiency'),
-    ):
-        for m in ORDER:
-            d = df[df['model'] == m].sort_values('context_length')
-            ax.plot(d['context_length'], d[col], marker=MARKERS[m], color=MODEL_COLORS[m], label=SHORT[m])
-        ax.set_xscale('log', base=2)
-        ax.set_xticks(ls)
-        ax.set_xticklabels([str(l) for l in ls])
-        ax.set_xlabel('Context length $l$')
-        ax.set_ylabel(ylabel)
-        ax.set_title(title)
-        ax.grid(True, linestyle=':', linewidth=0.5)
-    axes[0].set_yscale('log')
-    axes[0].set_ylim(2, 120)
-    axes[0].set_yticks([2, 5, 10, 20, 50, 100])
-    axes[0].set_yticklabels(['2', '5', '10', '20', '50', '100'])
-    axes[1].axhline(0, color='black', linewidth=0.6)
-    lo = df['tokens_per_J_improvement_v2_vs_v1_pct'].min()
-    hi = df['tokens_per_J_improvement_v2_vs_v1_pct'].max()
-    axes[1].set_ylim(lo - 0.05 * (hi - lo), hi + 0.75 * (hi - lo))  # headroom for the legend
-    axes[1].legend(ncol=3, frameon=False, loc='upper left', handlelength=1.2, columnspacing=0.5, fontsize=5.5)
 
-    ax = axes[2]
-    d = df[df['context_length'] == 2048].set_index('model').loc[ORDER]
-    x = np.arange(len(ORDER))
-    w = 0.27
-    for i, (col, label, color) in enumerate((('tpu_only_tokens_per_s', 'TPU-LLM', TPU_COLOR),
-                                              ('v1_tokens_per_s', 'PIM-LLM v1', V1_COLOR),
-                                              ('v2_tokens_per_s', 'PIM-LLM v2', V2_COLOR))):
-        ax.bar(x + (i - 1) * w, d[col], w, label=label, color=color, edgecolor='black', linewidth=0.4)
-    for xi, v in zip(x, d['v2_tokens_per_s']):
-        ax.text(xi + w, v * 1.15, f'{v:.0f}', ha='center', va='bottom', fontsize=5)
-    ax.set_yscale('log')
-    ax.set_ylim(0.3, 3000)
-    ax.set_xticks(x)
-    ax.set_xticklabels([SHORT[m] for m in ORDER], rotation=30, ha='right')
-    ax.set_ylabel('Tokens/s')
-    ax.set_title('(c) Throughput at $l=2048$')
-    ax.legend(ncol=3, frameon=False, loc='upper center', handlelength=1.2, columnspacing=0.8)
-    ax.grid(True, axis='y', linestyle=':', linewidth=0.5)
-    ax.set_axisbelow(True)
-
-    plt.tight_layout(w_pad=1.0)
-    fig.savefig(OUT / 'throughput_energy.pdf')
+def save(fig, name):
+    OUT.mkdir(exist_ok=True)
+    fig.savefig(OUT / name, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 
-LAT_PARTS = [
-    ('non_attention_computing_ns', 'Xbar+DAC+ADC', '#F4A261', 'both'),
-    ('non_attention_communication_ns', 'Communication', '#E9C46A', 'both'),
-    ('non_attention_buffer_ns', 'Buffer', '#1D3557', 'both'),
-    ('non_attention_digital_ns', 'Digital', '#2A9D8F', 'both'),
-    ('v1_attention_ns', 'Attn: systolic array (v1)', '#8DA9C4', 'v1'),
-    ('v2_attention_xbar_ns', 'Attn: PIM xbar (v2)', '#E63946', 'v2'),
-    ('v2_attention_buffer_ns', 'Attn: PIM buffer (v2)', '#9B2226', 'v2'),
-]
-EN_PARTS = [
-    ('non_attention_crossbar_nJ', 'Crossbar', '#B5838D', 'both'),
-    ('non_attention_DAC_nJ', 'DAC', '#FFCDB2', 'both'),
-    ('non_attention_ADC_nJ', 'ADC', '#6D6875', 'both'),
-    ('non_attention_buffer_nJ', 'Buffer', '#52B788', 'both'),
-    ('non_attention_other_digital_nJ', 'Other digital', '#CDB4DB', 'both'),
-    ('v1_attention_nJ', 'Attn: systolic array (v1)', '#8DA9C4', 'v1'),
-    ('v2_attention_nJ', 'Attn: PIM (v2)', '#E63946', 'v2'),
-]
+def tokens_per_second(df, l):
+    d = at(df, l)
+    d['Speedup'] = d['v2_tokens_per_s'] / d['v1_tokens_per_s']
+
+    fig, ax1 = plt.subplots(figsize=(14, 8))
+    bar_width = 0.35
+    r1 = np.arange(len(d))
+    r2 = r1 + bar_width
+    bars1 = ax1.bar(r1, d['v1_tokens_per_s'], color='#A9C0E5', width=bar_width, label=V1, alpha=0.9, edgecolor='black', linewidth=2)
+    bars2 = ax1.bar(r2, d['v2_tokens_per_s'], color='#4169E1', width=bar_width, label=V2, alpha=0.9, edgecolor='black', linewidth=2)
+    for bars in (bars1, bars2):
+        for bar in bars:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width() / 2, height / 2, f'{height:.2f}',
+                     ha='center', va='center', fontsize=25, fontweight='bold', color='black', rotation='vertical')
+
+    ax1.set_ylabel('Tokens per Second', fontweight='bold', fontsize=25)
+    ax1.set_yscale('log')
+    ax1.set_ylim(bottom=0.1)
+    ax1.set_xticks(r1 + bar_width / 2)
+    ax1.set_xticklabels(d['model'].map(NAMES), fontsize=25, rotation=45, ha='right')
+    ax1.tick_params(axis='y', labelsize=25)
+
+    ax2 = ax1.twinx()
+    ax2.plot(r1 + bar_width / 2, d['Speedup'], color='red', marker='o', linewidth=2, label='Speedup')
+    ax2.set_ylabel('Speedup', color='red', fontweight='bold', fontsize=25)
+    ax2.tick_params(axis='y', labelcolor='red', labelsize=25)
+    ax2.set_ylim(bottom=1)
+    for i, s in enumerate(d['Speedup']):
+        ax2.annotate(f'{s:.2f}x', (r1[i] + bar_width / 2, s), xytext=(0, 5), textcoords='offset points',
+                     ha='center', va='bottom', color='red', fontweight='bold', fontsize=25)
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(lines1, labels1, fontsize=25, loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=3, facecolor='#F0F0F0', edgecolor='black')
+    ax1.grid(axis='y', linestyle='--', alpha=0.5, color='#CCCCCC')
+    ax2.grid(False)
+    for spine in ax1.spines.values():
+        spine.set_visible(True)
+        spine.set_color('black')
+        spine.set_linewidth(1)
+    plt.tight_layout()
+    save(fig, f'tokens_per_second_{l}.png')
 
 
-def stacked(ax, df, l, parts, title):
-    d = df[df['context_length'] == l].set_index('model').loc[ORDER]
-    labels, rows = [], []
-    for m in ORDER:
-        for v in ('v1', 'v2'):
-            vals = np.array([d.loc[m, c] if who in ('both', v) else 0.0 for c, _, _, who in parts])
-            rows.append(vals / vals.sum() * 100)
-            labels.append(f'{SHORT[m]} {v}')
-    rows = np.array(rows)
-    y = np.arange(len(rows))[::-1] + np.repeat(np.arange(len(ORDER))[::-1], 2) * 0.5
-    left = np.zeros(len(rows))
-    handles = []
-    for j, (_, name, color, _) in enumerate(parts):
-        h = ax.barh(y, rows[:, j], left=left, height=0.85, color=color, edgecolor='black', linewidth=0.3, label=name)
-        for yi, li, wi in zip(y, left, rows[:, j]):
-            if wi >= 12:
-                ax.text(li + wi / 2, yi, f'{wi:.0f}', ha='center', va='center', fontsize=5, color='white')
-        left += rows[:, j]
-        handles.append(h)
-    ax.set_yticks(y)
-    ax.set_yticklabels(labels, fontsize=5)
+def tokens_per_joule(df, l):
+    d = at(df, l)
+    d['Improvement (%)'] = d['tokens_per_J_improvement_v2_vs_v1_pct']
+
+    fig, ax1 = plt.subplots(figsize=(14, 8))
+    bar_width = 0.35
+    r1 = np.arange(len(d))
+    r2 = r1 + bar_width
+    ax1.set_axisbelow(True)
+    ax1.grid(axis='y', linestyle='--', alpha=0.5, color='#CCCCCC', zorder=0)
+    bars1 = ax1.bar(r1, d['v1_tokens_per_J'], color='#00CED1', width=bar_width, label=V1, alpha=0.9, edgecolor='black', linewidth=2, zorder=2)
+    bars2 = ax1.bar(r2, d['v2_tokens_per_J'], color='#4682B4', width=bar_width, label=V2, alpha=0.9, edgecolor='black', linewidth=2, zorder=2)
+    for bars in (bars1, bars2):
+        for bar in bars:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width() / 2, height / 2, f'{height:.0f}',
+                     ha='center', va='center', rotation='vertical', fontsize=25, fontweight='bold', color='black')
+
+    ax1.set_ylabel('Tokens per Joule', fontweight='bold', fontsize=25)
+    ax1.set_yscale('log')
+    ax1.set_xticks(r1 + bar_width / 2)
+    ax1.set_xticklabels(d['model'].map(NAMES), fontsize=25, rotation=45, ha='right')
+    ax1.set_ylim(bottom=1)
+    ax1.tick_params(axis='y', labelsize=25)
+
+    ax2 = ax1.twinx()
+    imp = d['Improvement (%)']
+    ax2.plot(r2, imp, color='red', marker='o', linestyle='-', linewidth=2, markersize=8, zorder=3)
+    ax2.set_ylabel('Improvement (%)', color='red', fontweight='bold', fontsize=25)
+    ax2.tick_params(axis='y', labelcolor='red', labelsize=25)
+    ax2.axhline(0, color='red', linewidth=1, linestyle=':')
+    span = max(imp.max() - imp.min(), 1.0)
+    ax2.set_ylim(imp.min() - 0.15 * span, imp.max() + 0.25 * span)
+    ax2.set_axisbelow(True)
+    ax2.grid(axis='y', alpha=0.5, color='#CCCCCC')
+    for i, v in enumerate(imp):
+        ax2.text(r2[i], v, f'{v:.2f}%', color='red', fontweight='bold', ha='center', va='bottom', fontsize=25)
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(lines1, labels1, fontsize=25, loc='upper center', facecolor='#F0F0F0', edgecolor='none', bbox_to_anchor=(0.5, 1.15), ncol=3)
+    ax1.spines['top'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax1.set_facecolor('#F8F8F8')
+    plt.tight_layout()
+    save(fig, f'tokens_per_joule_{l}.png')
+
+
+def words_per_battery(df, l):
+    d = at(df, l)
+    fig, ax1 = plt.subplots(figsize=(14, 8))
+    ax1.set_facecolor('#F8F8F8')
+    bar_width = 0.35
+    r1 = np.arange(len(d))
+    r2 = r1 + bar_width
+    bars1 = ax1.bar(r1, d['v1_words'], color='#3C763D', width=bar_width, label=V1, alpha=0.9, edgecolor='black', linewidth=2, zorder=2)
+    bars2 = ax1.bar(r2, d['v2_words'], color='#36454F', width=bar_width, label=V2, alpha=0.9, edgecolor='black', linewidth=2, zorder=2)
+    for bars in (bars1, bars2):
+        for bar in bars:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width() / 2, height / 3, re.sub(r'E\+0?', 'E', f'{height:.1E}'),
+                     ha='center', va='center', rotation='vertical', fontsize=30, fontweight='bold', color='white')
+    ax1.set_ylabel('Words per Battery Life', fontweight='bold', fontsize=25)
+    ax1.set_yscale('log')
+    ax1.set_xticks(r1 + bar_width / 2)
+    ax1.set_xticklabels(d['model'].map(NAMES), fontsize=25, rotation=45, ha='right')
+    ax1.set_ylim(bottom=1e4)
+    ax1.tick_params(axis='y', labelsize=25)
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    ax1.legend(lines1, labels1, fontsize=25, loc='upper center', facecolor='#F0F0F0', edgecolor='none', bbox_to_anchor=(0.5, 1.15), ncol=3)
+    ax1.spines['top'].set_visible(False)
+    plt.tight_layout()
+    save(fig, f'words_per_battery_{l}.png')
+
+
+# latency components, colors as in PIM-LLM Fig. 9 plus the two PIM attention parts of v2
+LAT_COLORS = {
+    'non_attention_computing_ns': ('Xbar + DAC + ADC', '#F4A261'),
+    'non_attention_communication_ns': ('Communication', '#E9C46A'),
+    'non_attention_buffer_ns': ('Buffer', '#1D3557'),
+    'non_attention_digital_ns': ('Digital Circuitry', '#2A9D8F'),
+    'v1_attention_ns': ('Systolic Array', '#457B9D'),
+    'v2_attention_xbar_ns': ('Attention Xbar', '#E63946'),
+    'v2_attention_buffer_ns': ('Attention Buffer', '#9B2226'),
+}
+NON_ATTN = ['non_attention_computing_ns', 'non_attention_communication_ns', 'non_attention_buffer_ns', 'non_attention_digital_ns']
+
+
+def latency_distribution(df, l):
+    d = at(df, l)
+    cols = list(LAT_COLORS)
+    rows, labels = [], []
+    for _, row in d.iterrows():
+        for tag, attn in (('v1', ['v1_attention_ns']), ('v2', ['v2_attention_xbar_ns', 'v2_attention_buffer_ns'])):
+            used = NON_ATTN + attn
+            values = pd.Series({c: (row[c] if c in used else 0.0) for c in cols})
+            rows.append(values / values.sum() * 100)
+            labels.append(f"{NAMES[row['model']]} ({tag})")
+    pct = pd.DataFrame(rows)
+
+    fig, ax = plt.subplots(figsize=(14, 9))
+    pct.plot(kind='barh', stacked=True, ax=ax, color=[LAT_COLORS[c][1] for c in cols], edgecolor='black', linewidth=2, width=0.8)
+    ax.set_xlabel('Percentage (%)', fontsize=25, fontweight='bold')
+    ax.xaxis.grid(True, linestyle='--', alpha=0.7)
     ax.set_xlim(0, 100)
-    ax.set_xlabel('Share (%)')
-    ax.set_title(title)
-    ax.tick_params(axis='y', length=0)
-    return handles
+    handles, _ = ax.get_legend_handles_labels()
+    ax.legend(handles[::-1], [LAT_COLORS[c][0] for c in cols][::-1], bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=25)
+    for c in ax.containers:
+        ax.bar_label(c, labels=[f'{v.get_width():.1f}' if v.get_width() >= 3 else '' for v in c],
+                     label_type='center', color='white', fontweight='bold', fontsize=18)
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels, fontsize=20)
+    ax.tick_params(axis='x', labelsize=25)
+    ax.invert_yaxis()
 
-
-def breakdown(df):
-    fig, axes = plt.subplots(1, 3, figsize=(7.16, 2.2), sharey=True)
-    h_lat = stacked(axes[0], df, 256, LAT_PARTS, '(a) Latency, $l=256$')
-    stacked(axes[1], df, 8192, LAT_PARTS, '(b) Latency, $l=8192$')
-    h_en = stacked(axes[2], df, 8192, EN_PARTS, '(c) Energy, $l=8192$')
-    fig.legend(h_lat, [p[1] for p in LAT_PARTS], loc='lower center', ncol=7, frameon=False,
-               bbox_to_anchor=(0.53, -0.07), handlelength=1.0, columnspacing=0.8)
-    fig.legend(h_en, [p[1] for p in EN_PARTS], loc='lower center', ncol=7, frameon=False,
-               bbox_to_anchor=(0.53, -0.13), handlelength=1.0, columnspacing=0.8)
-    fig.text(0.075, -0.027, 'Latency (a, b):', fontsize=6, fontweight='bold', va='center')
-    fig.text(0.075, -0.081, 'Energy (c):', fontsize=6, fontweight='bold', va='center')
-    plt.tight_layout(w_pad=0.6)
-    fig.savefig(OUT / 'breakdown.pdf')
-    plt.close(fig)
+    axins = inset_axes(ax, width='30%', height='30%', loc='lower center', bbox_to_anchor=(0.85, -0.03, 1, 1), bbox_transform=ax.transAxes)
+    pct.plot(kind='barh', stacked=True, ax=axins, color=[LAT_COLORS[c][1] for c in cols], legend=False, edgecolor='black', linewidth=1)
+    axins.set_xlim(0, 1)
+    axins.set_yticks([])
+    axins.invert_yaxis()
+    axins.set_xlabel('Percentage (%)', fontsize=25, fontweight='bold')
+    axins.tick_params(axis='x', labelsize=25)
+    axins.set_title('Zoom (0-1%)', fontsize=25, fontweight='bold')
+    save(fig, f'latency_distribution_{l}.png')
 
 
 if __name__ == '__main__':
-    OUT.mkdir(exist_ok=True)
     df = load()
-    throughput_energy(df)
-    breakdown(df)
+    for l in cfg.CONTEXT_LENGTHS:
+        tokens_per_second(df, l)
+        tokens_per_joule(df, l)
+        words_per_battery(df, l)
+        latency_distribution(df, l)
     print(f'paper figures written to {OUT}')
